@@ -1,15 +1,18 @@
 - model: shop.product
   pk: 1
   fields:
-    name: Стол
-    price: 2000
+    name: Часы
+    price: 30000
+    stock: 2
 - model: shop.product
   pk: 2
   fields:
-    name: Стул
-    price: 1000
+    name: Кольцо
+    price: 20000
+    stock: 1
 - model: shop.product
   pk: 3
   fields:
-    name: Табурет
-    price: 500
+    name: Хрусталь
+    price: 50000
+    stock: 1

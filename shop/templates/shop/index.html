@@ -2,25 +2,23 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
-    <title>Товары</title>
+    <title>Магазин роскоши</title>
 </head>
 <body>
-    <div>
-        <h3>Список</h3>
-        <table>
-            <tr>
-                <td><p>Наименование</p></td>
-                <td><p>Цена</p></td>
-                <td></td>
-            </tr>
-            {% for p in products %}
-                <tr>
-                    <td><p>{{ p.name }}</p></td>
-                    <td><p>{{ p.price }}</p></td>
-                    <td><p><a href="/buy/{{ p.id }}">Купить</a></p></td>
-                </tr>
-            {% endfor %}
-        </table>
-    </div>
+    <h1>Магазин роскоши</h1>
+    <ul>
+        {% for product in products %}
+            <li>
+                <strong>{{ product.name }}</strong><br>
+                Цена: {{ product.price }}<br>
+                В наличие: {{ product.stock }}<br>
+                {% if product.stock > 0 %}
+                    <a href="{% url 'buy' product.id %}">Купить</a>
+                {% else %}
+                    <span>Товар закончился</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
 </body>
 </html>
