@@ -1,9 +1,9 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.http import HttpResponseBadRequest
+from django.urls import reverse
 from django.views.generic.edit import CreateView
 from .models import Product, Purchase
-
-# Create your views here.
 
 
 def index(request):
@@ -18,10 +18,17 @@ class PurchaseCreate(CreateView):
 
     def form_valid(self, form):
         product = form.cleaned_data['product']
-        if product.stock < 1:
+        
+        if not product.is_available(1):
             return HttpResponseBadRequest("Товар недоступен для покупки, недостаточно на складе.")
 
-        # Если товар доступен, уменьшаем его количество
-        product.decrease_stock(1)
-        self.object = form.save()
-        return HttpResponse(f'Спасибо за покупку, {self.object.person}!')
+        try:
+            product.decrease_stock(1)
+            self.object = form.save()
+            return HttpResponse(f'Спасибо за покупку, {self.object.person}!')
+        except ValueError:
+            return HttpResponseBadRequest("Товар недоступен для покупки, недостаточно на складе.")
+        
+    def form_invalid(self, form):
+        """Метод для обработки ошибок формы."""
+        return HttpResponseBadRequest("Ошибка валидации данных.")

@@ -7,22 +7,41 @@
 <body>
     <div>
         <h3>Покупка</h3>
-        <form method="post">{% csrf_token %}
-            <input type="hidden" value="{{ view.kwargs.product_id }}" name="product" />
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="product" value="{{ view.kwargs.product_id }}" />
+
+            {% if form.errors %}
+                <div style="color: red;">
+                    <p>Пожалуйста, исправьте ошибки:</p>
+                    <ul>
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ field }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
             <table>
                 <tr>
-                    <td><p>Введите свое имя </p></td>
-                    <td><input type="text" name="person" /> </td>
+                    <td><p>Введите свое имя:</p></td>
+                    <td><input type="text" name="person" value="{{ form.person.value|default:'' }}" /></td>
                 </tr>
                 <tr>
                     <td><p>Введите адрес доставки:</p></td>
-                    <td>
-                        <input type="text" name="address" />
-                    </td>
+                    <td><input type="text" name="address" value="{{ form.address.value|default:'' }}" /></td>
                 </tr>
-                <tr><td><input type="submit" value="Отправить" /> </td><td></td></tr>
+                <tr>
+                    <td><input type="submit" value="Отправить" /></td>
+                    <td></td>
+                </tr>
             </table>
         </form>
+    </div>
+    <div>
+        <a href="{% url 'index' %}"><button>Вернуться на главную страницу</button></a>
     </div>
 </body>
 </html>

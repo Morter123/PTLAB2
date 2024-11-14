@@ -1,7 +1,5 @@
 from django.db import models
-
-# Create your models here.
-
+from django.core.validators import MinLengthValidator, RegexValidator
 
 class Product(models.Model):
     name = models.CharField(max_length=100)
@@ -13,25 +11,27 @@ class Product(models.Model):
         return self.stock >= quantity
 
     def decrease_stock(self, amount):
-        """Уменьшаем количество товара на складе."""
+        """Уменьшаем количество товара на складе и сохраняем его."""
         if self.stock >= amount:
             self.stock -= amount
-            self.save()
+            self.save()  # Сохраняем изменения в базе данных
         else:
             raise ValueError("Недостаточно товара на складе.")
 
-
 class Purchase(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    person = models.CharField(max_length=200)
-    address = models.CharField(max_length=200)
+    person = models.CharField(
+        max_length=200,
+        validators=[
+            MinLengthValidator(1, "Имя не может быть пустым."),
+            RegexValidator(r'^[a-zA-Zа-яА-ЯёЁ\s]+$', "Имя должно содержать только буквы."),
+        ],
+    )
+    address = models.CharField(
+        max_length=200,
+        validators=[
+            MinLengthValidator(1, "Адрес не может быть пустым."),
+            RegexValidator(r'^[\w\s,-]+$', "Адрес содержит некорректные символы."),
+        ],
+    )
     date = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        """Перед сохранением уменьшаем количество товара на складе."""
-        if self.product.is_available(1):  # Предполагаем, что покупается 1 товар
-            self.product.decrease_stock(1)  # Уменьшаем количество на складе
-            super().save(*args, **kwargs)
-        else:
-            raise ValueError(
-                "Товар недоступен для покупки, недостаточно на складе.")
