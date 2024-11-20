@@ -1,55 +1,89 @@
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.contrib.messages import get_messages
+from django.contrib.auth.models import User
 from shop.models import Product, Purchase
+from shop.views import PurchaseCreate
 
 
-class PurchaseCreateTestCase(TestCase):
+class ShopViewsTest(TestCase):
+
     def setUp(self):
         self.client = Client()
-        self.product = Product.objects.create(name="Book", price=740, stock=1)
+        self.product = Product.objects.create(
+            name='Luxury Watch',
+            price=1000,
+            stock=10
+        )
 
 
-def test_purchase_success_when_stock_available(self):
-    """Проверка успешной покупки, если товар в наличии."""
-    response = self.client.post(reverse('buy', args=[self.product.id]), {
-        'person': 'Покупатель',
-        'address': 'Светлый путь, 10'
-    })
-    self.product.refresh_from_db()  # Обновляем объект из базы данных
-    self.assertEqual(self.product.stock, 0)  # Товар должен уменьшиться на 1
-    self.assertEqual(response.status_code, 200)  # Ожидаем успешный ответ
-    # Проверка успешного сообщения
-    self.assertContains(response, 'Спасибо за покупку')
+    def test_index_view(self):
+        Product.objects.create(name='Product 1', price=100, stock=5)
+        Product.objects.create(name='Product 2', price=200, stock=3)
+
+        response = self.client.get(reverse('index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Product 1')
+        self.assertContains(response, 'Product 2')
+
+    def test_purchase_create_view_success(self):
+        
+        self.product.stock = 10
+        self.product.save()
+
+        response = self.client.post(
+            reverse('buy', args=[self.product.id]),
+            {'product': self.product.id, 'person': 'Тестовый Покупатель',
+                'address': 'Тестовый Адрес'}
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('index'))
+
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(str(messages[0]), "Спасибо за покупку, Тестовый Покупатель!")
+        
+
+    def test_purchase_create_view_no_product(self):
+        # Попытка покупки несуществующего товара
+        response = self.client.post(reverse('buy', args=[999]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('index'))
+
+        # Проверка сообщения об ошибке
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(str(messages[0]), "Ошибка при обработке товара, недостаточно на складе.")
 
 
-def test_invalid_purchase_person(self):
-    """Проверка, что покупка не пройдет при некорректном имени."""
-    response = self.client.post(reverse('buy', args=[self.product.id]), {
-        'person': '---',  # Некорректное имя
-        'address': 'Street Test'
-    })
-    self.assertEqual(response.status_code, 400)  # Ожидаем ошибку
-    self.assertContains(response, 'Имя должно содержать только буквы.')
+    def test_purchase_create_view_invalid_stock(self):
+        self.product.stock = 0
+        self.product.save()
+
+        response = self.client.post(
+            reverse('buy', args=[self.product.id]),
+            {'product': self.product.id, 'person': 'Test Person', 'address': 'Test Address'}
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('index'))
+
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(
+            str(messages[0]), "Товар недоступен для покупки, недостаточно на складе.")
 
 
-def test_invalid_purchase_address(self):
-    """Проверка, что покупка не пройдет при некорректном адресе."""
-    response = self.client.post(reverse('buy', args=[self.product.id]), {
-        'person': 'Buyer',
-        'address': '-12'  # Некорректный адрес
-    })
-    self.assertEqual(response.status_code, 400)  # Ожидаем ошибку
-    self.assertContains(response, 'Адрес содержит некорректные символы.')
+    def test_purchase_create_view_invalid_form(self):
+        
+        response = self.client.post(reverse('buy', args=[self.product.id]), {})
 
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('buy', args=[self.product.id]))
 
-def test_purchase_fails_when_no_stock_available(self):
-    """Проверка, что покупка не удастся, если товара нет в наличии."""
-    self.product.stock = 0
-    self.product.save()
-    response = self.client.post(reverse('buy', args=[self.product.id]), {
-        'person': 'Petrov',
-        'address': 'Dark Road'
-    })
-    self.assertEqual(response.status_code, 400)  # Ожидаем ошибку
-    self.assertContains(
-        response, 'Товар недоступен для покупки, недостаточно на складе.')
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(str(messages[0]), "Ошибка валидации данных.")
+
+    def test_purchase_create_view_no_product(self):
+        response = self.client.post(reverse('buy', args=[999]))
+        self.assertEqual(response.status_code, 302)

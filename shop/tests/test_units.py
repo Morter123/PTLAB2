@@ -12,15 +12,15 @@ class ProductUnitTestCase(TestCase):
 
     def test_is_available(self):
         """Тестируем метод is_available"""
-        self.assertTrue(self.product_in_stock.is_available(5))  # Товар доступен, если на складе достаточно.
-        self.assertFalse(self.product_out_of_stock.is_available(1))  # Товар недоступен, если нет на складе.
+        self.assertTrue(self.product_in_stock.is_available(5)) 
+        self.assertFalse(self.product_out_of_stock.is_available(1))  
 
     def test_decrease_stock(self):
         """Тестируем метод decrease_stock"""
         initial_stock = self.product_in_stock.stock
         self.product_in_stock.decrease_stock(1)  # Уменьшаем запас на 1
-        self.product_in_stock.refresh_from_db()  # Обновляем объект из базы данных
-        self.assertEqual(self.product_in_stock.stock, initial_stock - 1)  # Проверяем, что запас уменьшился.
+        self.product_in_stock.refresh_from_db()
+        self.assertEqual(self.product_in_stock.stock, initial_stock - 1)
 
     def test_decrease_stock_with_error(self):
         """Тестируем, что будет ошибка, если товаров недостаточно на складе"""

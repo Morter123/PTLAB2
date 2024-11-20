@@ -4,7 +4,7 @@ from django.core.validators import MinLengthValidator, RegexValidator
 class Product(models.Model):
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    stock = models.IntegerField(default=0)
+    stock = models.PositiveIntegerField(default=0)
 
     def is_available(self, quantity):
         """Проверка, есть ли достаточно товара на складе."""

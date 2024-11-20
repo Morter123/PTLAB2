@@ -1,9 +1,10 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponse
 from django.urls import reverse
 from django.views.generic.edit import CreateView
 from .models import Product, Purchase
+
 
 
 def index(request):
@@ -20,15 +21,19 @@ class PurchaseCreate(CreateView):
         product = form.cleaned_data['product']
         
         if not product.is_available(1):
-            return HttpResponseBadRequest("Товар недоступен для покупки, недостаточно на складе.")
+            messages.error(self.request, "Товар недоступен для покупки, недостаточно на складе.")
+            return redirect('index')  # Перенаправление на главную страницу
 
         try:
             product.decrease_stock(1)
             self.object = form.save()
-            return HttpResponse(f'Спасибо за покупку, {self.object.person}!')
+            messages.success(self.request, f"Спасибо за покупку, {self.object.person}!")
+            return redirect('index')  # Перенаправление на главную страницу
         except ValueError:
-            return HttpResponseBadRequest("Товар недоступен для покупки, недостаточно на складе.")
+            messages.error(self.request, "Ошибка при обработке товара, недостаточно на складе.")
+            return redirect('index')  # Перенаправление на главную страницу
         
     def form_invalid(self, form):
         """Метод для обработки ошибок формы."""
-        return HttpResponseBadRequest("Ошибка валидации данных.")
+        messages.error(self.request, "Ошибка валидации данных.")
+        return redirect(self.request.path)
